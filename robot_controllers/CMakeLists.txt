@@ -47,9 +47,15 @@ include_directories(
   ${CATKIN_DEVEL_PREFIX}/include
   ${EIGEN3_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
+  # 25.07.15 [ONNX]
+  /opt/onnxruntime/include
 )
 
-link_directories(${CATKIN_DEVEL_PREFIX}/lib)
+link_directories(
+  ${CATKIN_DEVEL_PREFIX}/lib
+  # 25.07.15 [ONNX]
+  /opt/onnxruntime/lib
+)
 
 # Add a shared library target
 add_library(${PROJECT_NAME} SHARED
@@ -63,7 +69,9 @@ add_library(${PROJECT_NAME} SHARED
 target_link_libraries(${PROJECT_NAME}
   limxsdk_lowlevel
   ${catkin_LIBRARIES}  # Link with catkin libraries
-  onnxruntime          # Link with onnxruntime library
+  # 25.07.15 [ONNX]
+  # onnxruntime          # Link with onnxruntime library
+  /opt/onnxruntime/lib/libonnxruntime.so
 )
 
 # Mark executables and/or libraries for installation
