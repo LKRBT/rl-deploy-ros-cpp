@@ -32,6 +32,7 @@ void WheelfootController::starting(const ros::Time &time) {
 
 // Update function called periodically
 void WheelfootController::update(const ros::Time &time, const ros::Duration &period) {
+  // static bool firstWalkLog = true;
   switch (mode_) {
     case Mode::STAND:
     initJointAngles_(1, 0) = -0.9;
@@ -39,6 +40,12 @@ void WheelfootController::update(const ros::Time &time, const ros::Duration &per
       handleStandMode();
       break;
     case Mode::WALK:
+    // if (firstWalkLog) {
+      // for (size_t i = 0; i < hybridJointHandles_.size(); i++) {
+        // ROS_INFO_STREAM("AFTER STAND - hybridJointHandle[" << i << "] = " << hybridJointHandles_[i].getPosition());
+      // }
+      // firstWalkLog = false;
+    // }
     initJointAngles_(1, 0) = -0.0;
     initJointAngles_(5, 0) = 0.0;
       handleWalkMode();
