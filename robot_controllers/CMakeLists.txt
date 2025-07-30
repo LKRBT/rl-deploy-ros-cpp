@@ -24,6 +24,23 @@ find_package(catkin REQUIRED
   robot_description
   controller_interface
   angles
+  # 25.07.30 [BDS]
+  std_msgs
+  message_generation
+)
+
+# 25.07.30 [BDS]
+# 서비스 파일 추가
+add_service_files(
+  FILES
+  SetMode.srv
+)
+
+# 25.07.30 [BDS]
+# 메시지/서비스 생성
+generate_messages(
+  DEPENDENCIES
+  std_msgs
 )
 
 # Specify catkin-specific package configuration
@@ -39,6 +56,9 @@ catkin_package(
   robot_description
   controller_interface
   angles
+  # 25.07.30 [BDS]
+  std_msgs
+  message_runtime
 )
 
 # Include directories for header files

@@ -65,6 +65,14 @@ target_link_libraries(pointfoot_node
         pthread
 )
 
+# 25.07.29 [BDS]
+add_executable(virtual_joystick_node src/virtualjoyNode.cpp)
+target_link_libraries(virtual_joystick_node 
+        ${catkin_LIBRARIES}
+        limxsdk_lowlevel
+        pthread
+)
+
 # Mark executables and/or libraries for installation
 install(TARGETS pointfoot_node
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

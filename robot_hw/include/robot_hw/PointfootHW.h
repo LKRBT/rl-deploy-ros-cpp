@@ -76,6 +76,10 @@ private:
   std::map<std::string, int> joystick_axes_map_;
   ros::ServiceClient switch_controllers_client_;
   ros::ServiceClient list_controllers_client_;
+  // 25.07.29 [BDS]
+  ros::ServiceClient mode_client_;
+  ros::Subscriber joy_sub_;  // ✅ 멤버 변수로 유지ㅍ
+  void joyCallback(const sensor_msgs::Joy::ConstPtr& msg);
 
   limxsdk::PointFoot *robot_;
 

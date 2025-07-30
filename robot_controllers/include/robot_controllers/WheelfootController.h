@@ -9,6 +9,9 @@
 #include "robot_controllers/ControllerBase.h"
 #include "limxsdk/pointfoot.h"
 
+// 25.07.29 [BDS]
+#include "robot_controllers/SetMode.h"
+
 namespace robot_controller {
 // Struct for holding configuration settings for a biped robot
 struct WheelBipedRobotCfg : public RobotCfg {};
@@ -25,8 +28,10 @@ public:
 
   // Enumeration for controller modes
   enum class Mode : uint8_t {
-    STAND,  // Stand mode
-    WALK,   // Walk mode
+    STAND = 0,  // Stand mode
+    WALK = 1,   // Walk mode
+    // 25.07.29 [BDS]
+    IDLE = 2,   // IDLE mode
   };
 
   // Initialize the controller
@@ -37,6 +42,9 @@ public:
 
   // Update the controller
   void update(const ros::Time &time, const ros::Duration &period) override;
+
+  // 25.07.30 [BDS]
+  bool setModeCallback(robot_controllers::SetMode::Request& req, robot_controllers::SetMode::Response& res);
 
 protected:
   // Load the model for the controller
@@ -69,6 +77,10 @@ protected:
   WheelBipedRobotCfg robotCfg_; // Biped robot configuration
 
   Mode mode_; // Controller mode
+
+  // 25.07.29 [BDS]
+  // ROS service server (모드는 내부 protected로 관리)
+  ros::ServiceServer mode_service_;
 
 private:
   // File path for policy model

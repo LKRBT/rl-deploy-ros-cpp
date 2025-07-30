@@ -8,6 +8,8 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <std_msgs/Float32MultiArray.h>
 #include <numeric>
+// 25.07.29 [BDS]
+#include "robot_controllers/SetMode.h"
 
 namespace robot_controller {
 
@@ -27,13 +29,49 @@ void WheelfootController::starting(const ros::Time &time) {
 
   loopCount_ = 0;
 
-  mode_ = Mode::STAND;
+  // 25.07.29 [BDS]
+  // mode_ = Mode::STAND;
+  mode_ = Mode::IDLE;
+  ROS_WARN("MODE : IDLE");
+
+  mode_service_ = nh_.advertiseService("controller/set_mode", &WheelfootController::setModeCallback, this);
+}
+
+// 모드 전환 서비스 (0: STAND, 1: WALK, 2: IDLE)
+bool WheelfootController::setModeCallback(robot_controllers::SetMode::Request& req, robot_controllers::SetMode::Response& res) {
+  ROS_WARN(">>> setModeCallback() CALLED <<<");
+  ROS_INFO("Requested mode: %d", req.mode);
+
+  switch (req.mode) {
+    case 0:
+      mode_ = Mode::STAND;
+      res.message = "Switched to STAND mode.";
+      break;
+    case 1:
+      mode_ = Mode::WALK;
+      res.message = "Switched to WALK mode.";
+      break;
+    case 2:
+      mode_ = Mode::IDLE;
+      res.message = "Switched to IDLE mode.";
+      break;
+    default:
+      res.success = false;
+      res.message = "Invalid mode value.";
+      return true;
+  }
+  res.success = true;
+  return true;
 }
 
 // Update function called periodically
 void WheelfootController::update(const ros::Time &time, const ros::Duration &period) {
   // static bool firstWalkLog = true;
   switch (mode_) {
+    // 25.07.29 [BDS]
+    case Mode::IDLE:
+      break;
+
     case Mode::STAND:
     initJointAngles_(1, 0) = -0.9;
     initJointAngles_(5, 0) = 0.9;
@@ -122,8 +160,9 @@ void WheelfootController::handleStandMode() {
       }
     }
     standPercent_ += 3 / (standDuration_ * loopFrequency_);
-  } else {
-    mode_ = Mode::WALK;
+  // } else {
+  //   mode_ = Mode::WALK;
+  // }
   }
 }
 

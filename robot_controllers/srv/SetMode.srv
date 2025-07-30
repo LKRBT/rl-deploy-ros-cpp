@@ -1,0 +1,5 @@
+# SetMode.srv
+uint8 mode     # 0 = STAND, 1 = WALK, 2 = IDLE
+---
+bool success
+string message

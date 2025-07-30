@@ -14,8 +14,14 @@
     <depend>robot_common</depend>
     <depend>robot_description</depend>
     <build_depend>pluginlib</build_depend>
+    <!-- 25.07.30 [BDS] -->
+    <build_depend>std_msgs</build_depend>
+    <build_depend>message_generation</build_depend>
     <build_export_depend>pluginlib</build_export_depend>
     <exec_depend>controller_manager</exec_depend>
+    <!-- 25.07.30 [BDS] -->
+    <exec_depend>std_msgs</exec_depend>
+    <exec_depend>message_runtime</exec_depend>
     <export>
         <controller_interface plugin="${prefix}/robot_controllers_plugins.xml"/>
     </export>

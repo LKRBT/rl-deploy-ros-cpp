@@ -25,11 +25,14 @@ int main(int argc, char **argv) {
   }
 
   try {
+    // PointfootHW는 ROS Client 역할로 Service 호출 가능
+    // NodeHandle을 갖고 있음 (robot_hw_nh)
     ros::NodeHandle nh;
     ros::NodeHandle robot_hw_nh("~");
 
     // Create and initialize PointfootHW instance
     std::shared_ptr<hw::PointfootHW> hw = std::make_shared<hw::PointfootHW>();
+    // ros::spin()으로 인해 조이스틱 콜백은 언제든지 비동기적으로 지속 수신됩니다.
     hw->init(nh, robot_hw_nh);
 
     // Create and initialize RobotHWLoop instance
@@ -44,6 +47,8 @@ int main(int argc, char **argv) {
     }
 
     // If Gazebo is being used, start the Biped controller in a detached thread
+    // → 실행 시점에 컨트롤러가 비동기적으로 실행될 수 있음 → 이로 인해 서비스가 아직 advertise 되지 않았을 가능성 존재
+    // → 이를 방지하기 위해 controller 실행 후 service client는 retry or wait 구조가 필요
     if (use_gazebo) {
       std::thread controller_thread([hw]() {
         std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<int64_t>(3.0 * 1e9)));
