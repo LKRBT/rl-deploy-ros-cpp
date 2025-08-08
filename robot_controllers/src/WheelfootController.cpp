@@ -30,36 +30,43 @@ void WheelfootController::starting(const ros::Time &time) {
   loopCount_ = 0;
 
   // 25.07.29 [BDS]
-  // mode_ = Mode::STAND;
-  mode_ = Mode::IDLE;
-  ROS_WARN("MODE : IDLE");
+  mode_ = Mode::STAND;
+  // mode_ = Mode::IDLE;
+  // ROS_WARN("MODE : IDLE");
 
-  mode_service_ = nh_.advertiseService("controller/set_mode", &WheelfootController::setModeCallback, this);
+  // mode_service_ = nh_.advertiseService("controller/set_mode", &WheelfootController::setModeCallback, this);
 }
 
 // 모드 전환 서비스 (0: STAND, 1: WALK, 2: IDLE)
 bool WheelfootController::setModeCallback(robot_controllers::SetMode::Request& req, robot_controllers::SetMode::Response& res) {
-  ROS_WARN(">>> setModeCallback() CALLED <<<");
-  ROS_INFO("Requested mode: %d", req.mode);
+  // ROS_WARN(">>> setModeCallback() CALLED <<<");
+  // ROS_INFO("Requested mode: %d", req.mode);
 
-  switch (req.mode) {
-    case 0:
-      mode_ = Mode::STAND;
+  // 이미 현재 모드와 같다면 중복 전환하지 않음
+  if (mode_ == static_cast<Mode>(req.mode)) {
+    res.success = true;
+    res.message = "Mode already set. No change needed.";
+    return true;
+  }
+
+  // 실제 모드 전환 수행
+  mode_ = static_cast<Mode>(req.mode);
+
+  switch (mode_) {
+    case Mode::STAND:
       res.message = "Switched to STAND mode.";
       break;
-    case 1:
-      mode_ = Mode::WALK;
+    case Mode::WALK:
       res.message = "Switched to WALK mode.";
       break;
-    case 2:
-      mode_ = Mode::IDLE;
+    case Mode::IDLE:
       res.message = "Switched to IDLE mode.";
       break;
     default:
-      res.success = false;
-      res.message = "Invalid mode value.";
-      return true;
+      res.message = "Unknown mode.";
+      break;
   }
+  ROS_WARN("Mode switch: %s", res.message.c_str());
   res.success = true;
   return true;
 }
@@ -95,6 +102,7 @@ void WheelfootController::update(const ros::Time &time, const ros::Duration &per
 
 // Handle walking mode
 void WheelfootController::handleWalkMode() {
+
   TicToc dida;
   // Compute observation & actions
   if (robotCfg_.controlCfg.decimation == 0) {
@@ -160,10 +168,10 @@ void WheelfootController::handleStandMode() {
       }
     }
     standPercent_ += 3 / (standDuration_ * loopFrequency_);
-  // } else {
-  //   mode_ = Mode::WALK;
-  // }
+  } else {
+    mode_ = Mode::WALK;
   }
+  // }
 }
 
 bool WheelfootController::loadModel() {

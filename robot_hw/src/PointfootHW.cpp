@@ -154,19 +154,8 @@ bool PointfootHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
   // You can customize it according to your needs.
 
   mode_client_ = root_nh.serviceClient<robot_controllers::SetMode>("/controller/set_mode");
-  joy_sub_ = root_nh.subscribe("/virtual_joystick", 10, &PointfootHW::joyCallback, this);
 
-/*
-  // 25.07.29 [BDS]
-  // 가상 조이스틱 토픽(/virtual_joystick)에서 SensorJoy 타입으로 메시지를 받아서 처리
-  // joy_sub_ = root_nh.subscribe<sensor_msgs::Joy>("/virtual_joystick", 10, [this](const sensor_msgs::Joy::ConstPtr& msg) {
-  void PointfootHW::joyCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-  
-    ROS_INFO_STREAM("Received Joy msg | buttons: " << msg->buttons.size()
-                                                  << ", axes: " << msg->axes.size());
-
-  // robot_->subscribeSensorJoy([this, &root_nh](const limxsdk::SensorJoyConstPtr& msg) {
-  // robot_->subscribeSensorJoy([this](const limxsdk::SensorJoyConstPtr& msg) {
+  robot_->subscribeSensorJoy([this](const limxsdk::SensorJoyConstPtr& msg) {
 
     // 25.07.30 [BDS] 
     // controller 시작될때, IDLE MODE로 진입
@@ -231,30 +220,6 @@ bool PointfootHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
       }
     }
 
-    // // 25.07.30 [BDS]
-    // // TODO 컨트롤러가 실행될때에만 순서대로 적용되도록 변경 필요 (전이상태 유지하도록)
-    // // L1 + A(엑스) 누를때, SQUATT MODE로 진입
-    // if (joystick_btn_map_.count("L1") > 0 && joystick_btn_map_.count("A") > 0) {
-    //   if (msg->buttons[joystick_btn_map_["L1"]] == 1 && msg->buttons[joystick_btn_map_["A"]] == 1) {
-    //     ROS_ERROR("L1 + A: switching to SQUATT mode");
-
-    //     static ros::ServiceClient mode_client = root_nh.serviceClient<std_srvs::SetBool>("/controller/set_mode");
-    //     // ★ 서비스 연결 확인 (최대 1초 대기)
-    //     if (!mode_client.waitForExistence(ros::Duration(1.0))) {
-    //       ROS_ERROR("Service /controller/set_mode not available");
-    //       return;
-    //     }
-
-    //     std_srvs::SetBool srv;
-    //     srv.request.data = true;  // true = SQUATT
-    //     if (mode_client.call(srv)) {
-    //       ROS_INFO("Mode switch: %s", srv.response.message.c_str());
-    //     } else {
-    //       ROS_ERROR("Failed to call mode switch service.");
-    //     }
-    //   }
-    // }
-
     // 25.07.30 [BDS]
     // controller 종료될때, IDEL 모드로 진입
     // L1 + X(네모) 누를때, controller 종료
@@ -283,7 +248,6 @@ bool PointfootHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
       }
     }
   });
-*/
 
   /*
    * Subscribing to diagnostic values for calibration state
@@ -328,133 +292,6 @@ bool PointfootHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
   setupContactSensor(robot_hw_nh);
 
   return true;
-}
-
-// 25.07.29 [BDS]
-// 가상 조이스틱 토픽(/virtual_joystick)에서 SensorJoy 타입으로 메시지를 받아서 처리
-// joy_sub_ = root_nh.subscribe<sensor_msgs::Joy>("/virtual_joystick", 10, [this](const sensor_msgs::Joy::ConstPtr& msg) {
-void PointfootHW::joyCallback(const sensor_msgs::Joy::ConstPtr& msg) {
-
-  ROS_INFO_STREAM("Received Joy msg | buttons: " << msg->buttons.size()
-                                                << ", axes: " << msg->axes.size());
-
-// robot_->subscribeSensorJoy([this, &root_nh](const limxsdk::SensorJoyConstPtr& msg) {
-// robot_->subscribeSensorJoy([this](const limxsdk::SensorJoyConstPtr& msg) {
-
-  // 25.07.30 [BDS] 
-  // controller 시작될때, IDLE MODE로 진입
-  // 1) 시뮬레이터 환경에서 자동 실행
-  // 2) 실제 환경에서 L2 + R2 누를때, controller 실행
-  // Logic for starting biped controller
-  if (calibration_state_ == 0 && joystick_btn_map_.count("L2") > 0 && joystick_btn_map_.count("R2") > 0) {
-    if (msg->buttons[joystick_btn_map_["L2"]] == 1 && msg->buttons[joystick_btn_map_["R2"]] == 1) {
-      ROS_ERROR("L2 + R2: switching to IDLE mode");
-
-      startBipedController();
-    }
-  }
-
-  // 25.07.29 [BDS]
-  // TODO 컨트롤러가 실행될때에만 순서대로 적용되도록 변경 필요 (전이상태 유지하도록)
-  // L1 + B(동그라미) 누를때, STAND MODE로 진입
-  if (joystick_btn_map_.count("L1") > 0 && joystick_btn_map_.count("B") > 0) {
-    if (msg->buttons[joystick_btn_map_["L1"]] == 1 && msg->buttons[joystick_btn_map_["B"]] == 1) {
-      ROS_ERROR("L1 + B: switching to STAND mode");
-
-      // // ★ 서비스 연결 확인 (최대 1초 대기)
-      if (!mode_client_.waitForExistence(ros::Duration(1.0))) {
-        ROS_ERROR("Service /controller/set_mode not available");
-        return;
-      }
-
-      // 25.07.30 [BDS]]
-      robot_controllers::SetMode srv;
-      srv.request.mode = 0;
-
-      if (mode_client_.call(srv)) {
-        ROS_INFO("Mode switch: %s", srv.response.message.c_str());
-      } else {
-        ROS_ERROR("Failed to call mode switch service.");
-      }
-    }
-  }
-
-  // 25.07.30 [BDS]
-  // TODO 컨트롤러가 실행될때에만 순서대로 적용되도록 변경 필요 (전이상태 유지하도록)
-  // L1 + Y(세모) 누를때, WALK MODE로 진입
-  if (joystick_btn_map_.count("L1") > 0 && joystick_btn_map_.count("Y") > 0) {
-    if (msg->buttons[joystick_btn_map_["L1"]] == 1 && msg->buttons[joystick_btn_map_["Y"]] == 1) {
-      ROS_ERROR("L1 + Y: switching to WALK mode");
-
-      // // ★ 서비스 연결 확인 (최대 1초 대기)
-      if (!mode_client_.waitForExistence(ros::Duration(1.0))) {
-        ROS_ERROR("Service /controller/set_mode not available");
-        return;
-      }
-
-      // 25.07.30 [BDS]]
-      robot_controllers::SetMode srv;
-      srv.request.mode = 1;
-
-      if (mode_client_.call(srv)) {
-        ROS_INFO("Mode switch: %s", srv.response.message.c_str());
-      } else {
-        ROS_ERROR("Failed to call mode switch service.");
-      }
-    }
-  }
-
-  // // 25.07.30 [BDS]
-  // // TODO 컨트롤러가 실행될때에만 순서대로 적용되도록 변경 필요 (전이상태 유지하도록)
-  // // L1 + A(엑스) 누를때, SQUATT MODE로 진입
-  // if (joystick_btn_map_.count("L1") > 0 && joystick_btn_map_.count("A") > 0) {
-  //   if (msg->buttons[joystick_btn_map_["L1"]] == 1 && msg->buttons[joystick_btn_map_["A"]] == 1) {
-  //     ROS_ERROR("L1 + A: switching to SQUATT mode");
-
-  //     static ros::ServiceClient mode_client = root_nh.serviceClient<std_srvs::SetBool>("/controller/set_mode");
-  //     // ★ 서비스 연결 확인 (최대 1초 대기)
-  //     if (!mode_client.waitForExistence(ros::Duration(1.0))) {
-  //       ROS_ERROR("Service /controller/set_mode not available");
-  //       return;
-  //     }
-
-  //     std_srvs::SetBool srv;
-  //     srv.request.data = true;  // true = SQUATT
-  //     if (mode_client.call(srv)) {
-  //       ROS_INFO("Mode switch: %s", srv.response.message.c_str());
-  //     } else {
-  //       ROS_ERROR("Failed to call mode switch service.");
-  //     }
-  //   }
-  // }
-
-  // 25.07.30 [BDS]
-  // controller 종료될때, IDEL 모드로 진입
-  // L1 + X(네모) 누를때, controller 종료
-  // Logic for stopping biped controller
-  if (joystick_btn_map_.count("L1") > 0 && joystick_btn_map_.count("X") > 0) {
-    if (msg->buttons[joystick_btn_map_["L1"]] == 1 && msg->buttons[joystick_btn_map_["X"]] == 1) {
-      ROS_FATAL("L1 + X stopping controller!");
-
-      stopBipedController();
-      abort();
-    }
-  }
-
-  // Publishing cmd_vel based on joystick input
-  if (joystick_axes_map_.count("left_horizon") > 0 && joystick_axes_map_.count("left_vertical") > 0
-    && joystick_axes_map_.count("right_horizon") > 0 && joystick_axes_map_.count("right_vertical") > 0) {
-    static ros::Time lastpub;
-    ros::Time now = ros::Time::now();
-    if (fabs(now.toSec() - lastpub.toSec()) >= (1.0 / 30)) {
-      geometry_msgs::Twist twist;
-      twist.linear.x = msg->axes[joystick_axes_map_["left_vertical"]] * 0.5;
-      twist.linear.y = msg->axes[joystick_axes_map_["left_horizon"]] * 0.5;
-      twist.angular.z = msg->axes[joystick_axes_map_["right_horizon"]] * 0.5;
-      cmd_vel_pub_.publish(twist);
-      lastpub = now;
-    }
-  }
 }
 
 // Method to read data from hardware
